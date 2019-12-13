@@ -60,17 +60,16 @@ export const useBoard = ({ size = 4 }: useBoardParam) => {
   });
 
   const onTilePress = (row: number, col: number) => {
-    const {
-      current: { row: zeroRow, col: zeroCol }
-    } = emptyTileCoord;
+    const { current: zeroRowCol } = emptyTileCoord;
     const isBesideEmpty =
-      (Math.abs(row - zeroRow) === 1) !== (Math.abs(col - zeroCol) === 1);
+      (Math.abs(row - zeroRowCol.row) === 1 && col - zeroRowCol.col === 0) ||
+      (Math.abs(col - zeroRowCol.col) === 1 && row - zeroRowCol.row === 0);
     if (isBesideEmpty) {
       dispatch({
         type: 'SWAP',
         payload: {
           a: { row, col },
-          b: emptyTileCoord.current
+          b: zeroRowCol
         }
       });
     }
