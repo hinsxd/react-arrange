@@ -70,7 +70,7 @@ const initGameState = (size: number): GameState => {
   }
 
   let zeroPos = { row: size - 1, col: size - 1 };
-  for (let i = 0; i < size * size * size * size * size; i++) {
+  for (let i = 0; i < size * size; i++) {
     const avail = [
       { row: zeroPos.row - 1, col: zeroPos.col },
       { row: zeroPos.row + 1, col: zeroPos.col },
@@ -102,13 +102,8 @@ export const useGame = ({ size = 4 }: useGameProps) => {
     dispatch
   ] = useReducer(gameReducer, size, initGameState);
 
-  const won = board
-    .flat()
-    .reduce(
-      (solved, val, i, arr) =>
-        solved && (val === 0 ? i === arr.length - 1 : val === i + 1),
-      true
-    );
+  const won =
+    board.flat().findIndex((val, i) => val !== i + 1) === size * size - 1;
 
   const positions = generatePositions(board);
   const availMoves = positions.filter(pos => isBeside(pos, positions[0]));
