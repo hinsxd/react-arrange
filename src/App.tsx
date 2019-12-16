@@ -28,7 +28,9 @@ const App: React.FC = () => {
   const styles = useStyles();
   const [size, setSize] = useState(4);
 
-  const { onTilePress, positions, startGame, won } = useGame({ size });
+  const { onTilePress, moves, positions, startGame, won, timer } = useGame({
+    size
+  });
 
   return (
     <>
@@ -71,6 +73,11 @@ const App: React.FC = () => {
               onClick={() => onTilePress(row, col)}
             ></Tile>
           ))}
+        </div>
+        <div>
+          <Typography>
+            Moves: {moves} | Time: {timer.toFixed(1)}s
+          </Typography>
         </div>
         {won && <div>You won</div>}
       </div>

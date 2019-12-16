@@ -1,43 +1,8 @@
-import {
-  Reducer,
-  useReducer,
-  useRef,
-  useEffect,
-  useCallback,
-  useMemo
-} from 'react';
+import { Reducer, useReducer, useEffect, useCallback } from 'react';
 import produce from 'immer';
 
-export type Board = number[][];
-
-type useGameProps = { size?: number };
-type coord = { row: number; col: number };
-type Action =
-  | { type: 'INIT_BOARD'; payload: { size: number } }
-  | { type: 'SWAP'; payload: { a: coord; b: coord } };
-
-type GameState = {
-  board: Board;
-  // positions: coord[];
-};
-
-const generatePositions = (board: Board): coord[] => {
-  const size = board.length;
-  let newPos = Array(size * size);
-  board.forEach((rowTiles, row) =>
-    rowTiles.forEach((value, col) => {
-      newPos[value] = { row, col };
-    })
-  );
-  return newPos;
-};
-
-const isBeside = (a: coord, b: coord): boolean => {
-  return (
-    (Math.abs(a.row - b.row) === 1 && a.col - b.col === 0) ||
-    (Math.abs(a.col - b.col) === 1 && a.row - b.row === 0)
-  );
-};
+import { Board, Action, GameState, coord, useGameProps } from './types';
+import { generatePositions, isBeside, getAvailM0ves } from './utils';
 
 const gameReducer: Reducer<GameState, Action> = (state, action) => {
   switch (action.type) {
@@ -49,6 +14,17 @@ const gameReducer: Reducer<GameState, Action> = (state, action) => {
         const temp = draft.board[a.row][a.col];
         draft.board[a.row][a.col] = draft.board[b.row][b.col];
         draft.board[b.row][b.col] = temp;
+        draft.moves++;
+        draft.started = true;
+
+        const flatBoard = draft.board.flat();
+        draft.won =
+          flatBoard.findIndex((val, i) => val !== i + 1) ===
+          flatBoard.length - 1;
+      });
+    case 'TICK':
+      return produce(state, draft => {
+        draft.timer = draft.timer + 0.1;
       });
     default:
       return state;
@@ -58,6 +34,7 @@ const gameReducer: Reducer<GameState, Action> = (state, action) => {
 const initGameState = (size: number): GameState => {
   let board: Board = [];
   let count = 1;
+
   for (let i = 0; i < size; i++) {
     board[i] = [];
     for (let j = 0; j < size; j++, count++) {
@@ -70,43 +47,31 @@ const initGameState = (size: number): GameState => {
   }
 
   let zeroPos = { row: size - 1, col: size - 1 };
+
   for (let i = 0; i < size * size; i++) {
-    const avail = [
-      { row: zeroPos.row - 1, col: zeroPos.col },
-      { row: zeroPos.row + 1, col: zeroPos.col },
-      { row: zeroPos.row, col: zeroPos.col - 1 },
-      { row: zeroPos.row, col: zeroPos.col + 1 }
-    ].filter(
-      pos => pos.row < size && pos.col < size && pos.row >= 0 && pos.col >= 0
-    );
+    const avail = getAvailM0ves(zeroPos, size);
     const chosen = avail[Math.floor(Math.random() * avail.length)];
     const temp = board[chosen.row][chosen.col];
     board[chosen.row][chosen.col] = board[zeroPos.row][zeroPos.col];
     board[zeroPos.row][zeroPos.col] = temp;
     zeroPos = chosen;
   }
-  // const positions = generatePositions(board);
 
-  return {
-    board
-    // positions
-  };
+  return { board, moves: 0, started: false, timer: 0, won: false };
 };
 
 export const useGame = ({ size = 4 }: useGameProps) => {
-  const [
-    {
-      board
-      // positions
-    },
-    dispatch
-  ] = useReducer(gameReducer, size, initGameState);
+  const [{ board, moves, started, timer, won }, dispatch] = useReducer(
+    gameReducer,
+    size,
+    initGameState
+  );
 
-  const won =
-    board.flat().findIndex((val, i) => val !== i + 1) === size * size - 1;
+  // const won =
+  //   board.flat().findIndex((val, i) => val !== i + 1) === size * size - 1;
 
   const positions = generatePositions(board);
-  const availMoves = positions.filter(pos => isBeside(pos, positions[0]));
+  const availMoves = getAvailM0ves(positions[0], size);
 
   const startGame = useCallback(() => {
     dispatch({ type: 'INIT_BOARD', payload: { size } });
@@ -116,6 +81,17 @@ export const useGame = ({ size = 4 }: useGameProps) => {
     startGame();
   }, [startGame]);
 
+  useEffect(() => {
+    let interval: any = null;
+    if (started && !won) {
+      interval = setInterval(() => {
+        dispatch({ type: 'TICK' });
+      }, 100);
+    } else if ((!started && timer !== 0) || won) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [started, timer, won]);
   const onTilePress = useCallback(
     (row: number, col: number) => {
       if (!won && isBeside(positions[0], { row, col })) {
@@ -131,5 +107,14 @@ export const useGame = ({ size = 4 }: useGameProps) => {
     [positions, won]
   );
 
-  return { board, onTilePress, positions, availMoves, startGame, won };
+  return {
+    board,
+    moves,
+    onTilePress,
+    positions,
+    availMoves,
+    startGame,
+    won,
+    timer
+  };
 };
