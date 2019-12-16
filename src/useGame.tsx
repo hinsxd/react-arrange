@@ -1,4 +1,11 @@
-import { Reducer, useReducer, useRef, useEffect, useCallback } from 'react';
+import {
+  Reducer,
+  useReducer,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo
+} from 'react';
 import produce from 'immer';
 
 export type Board = number[][];
@@ -63,7 +70,7 @@ const initGameState = (size: number): GameState => {
   }
 
   let zeroPos = { row: size - 1, col: size - 1 };
-  for (let i = 0; i < size * size * size * size; i++) {
+  for (let i = 0; i < size * size * size * size * size; i++) {
     const avail = [
       { row: zeroPos.row - 1, col: zeroPos.col },
       { row: zeroPos.row + 1, col: zeroPos.col },
@@ -78,7 +85,7 @@ const initGameState = (size: number): GameState => {
     board[zeroPos.row][zeroPos.col] = temp;
     zeroPos = chosen;
   }
-  const positions = generatePositions(board);
+  // const positions = generatePositions(board);
 
   return {
     board
@@ -94,20 +101,29 @@ export const useGame = ({ size = 4 }: useGameProps) => {
     },
     dispatch
   ] = useReducer(gameReducer, size, initGameState);
+
+  const won = board
+    .flat()
+    .reduce(
+      (solved, val, i, arr) =>
+        solved && (val === 0 ? i === arr.length - 1 : val === i + 1),
+      true
+    );
+
   const positions = generatePositions(board);
   const availMoves = positions.filter(pos => isBeside(pos, positions[0]));
-
-  useEffect(() => {
-    startGame();
-  }, [size]);
 
   const startGame = useCallback(() => {
     dispatch({ type: 'INIT_BOARD', payload: { size } });
   }, [size]);
 
+  useEffect(() => {
+    startGame();
+  }, [startGame]);
+
   const onTilePress = useCallback(
     (row: number, col: number) => {
-      if (isBeside(positions[0], { row, col })) {
+      if (!won && isBeside(positions[0], { row, col })) {
         dispatch({
           type: 'SWAP',
           payload: {
@@ -117,8 +133,8 @@ export const useGame = ({ size = 4 }: useGameProps) => {
         });
       }
     },
-    [positions]
+    [positions, won]
   );
 
-  return { board, onTilePress, positions, availMoves, startGame };
+  return { board, onTilePress, positions, availMoves, startGame, won };
 };
