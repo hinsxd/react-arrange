@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useBoard } from './useBoard';
-import { Box, makeStyles } from '@material-ui/core';
-import clsx from 'clsx';
+import { useGame } from './useGame';
+import { Button, makeStyles, IconButton, Typography } from '@material-ui/core';
+import { Add as AddIcon, Remove as RemoveIcon } from '@material-ui/icons';
 
 const useStyles = makeStyles({
   wrapper: {
@@ -9,14 +9,16 @@ const useStyles = makeStyles({
     width: '100vw',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
+    // justifyContent: 'center',
+    alignItems: 'center'
+  },
+  topbar: {
+    display: 'flex',
+    flexDirection: 'row',
     alignItems: 'center'
   },
   board: {
-    // width: '100%',
-    // height: '100%',
-    // marginLeft: 'auto',
-    // marginRight: 'auto',
+    flex: 0,
     position: 'relative'
   },
   tile: {
@@ -61,30 +63,30 @@ const App: React.FC = () => {
   const styles = useStyles();
   const [size, setSize] = useState(4);
 
-  const { board, onTilePress } = useBoard({ size });
+  const { onTilePress, positions, startGame } = useGame({ size });
 
-  const [positions, setPositions] = useState<{ row: number; col: number }[]>(
-    []
-  );
-
-  useEffect(() => {
-    let newPos = Array(size * size);
-    board.forEach((rowTiles, row) =>
-      rowTiles.forEach((value, col) => {
-        newPos[value] = { row, col };
-      })
-    );
-    setPositions(newPos);
-  }, [board, size]);
-  console.log(positions);
-  console.log(board);
   return (
     <div className={styles.wrapper}>
-      <input
-        type="number"
-        value={size}
-        onChange={e => setSize(parseInt(e.target.value))}
-      />
+      <div className={styles.topbar}>
+        <IconButton
+          onClick={() => {
+            if (size > 1) {
+              setSize(size - 1);
+            }
+          }}
+        >
+          <RemoveIcon />
+        </IconButton>
+        <Typography component="span">{size}</Typography>
+        <IconButton
+          onClick={() => {
+            setSize(size + 1);
+          }}
+        >
+          <AddIcon />
+        </IconButton>
+        <Button onClick={startGame}>Restart</Button>
+      </div>
       <div
         className={styles.board}
         style={{ width: size * 60, height: size * 60 }}
@@ -98,17 +100,6 @@ const App: React.FC = () => {
             onClick={() => onTilePress(row, col)}
           ></Tile>
         ))}
-        {/* {board.map((rowTiles, row) =>
-          rowTiles.map((cell, col) => (
-            <Tile
-              value={cell}
-              row={row}
-              col={col}
-              key={`tile-${cell}`}
-              onClick={() => onTilePress(row, col)}
-            ></Tile>
-          ))
-        )} */}
       </div>
     </div>
   );
