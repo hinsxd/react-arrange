@@ -53,12 +53,18 @@ const App: React.FC = () => {
           <Typography component="span">{size}</Typography>
           <IconButton
             onClick={() => {
-              setSize(size + 1);
+              if (size < 8) {
+                setSize(size + 1);
+              }
             }}
+            disabled={size >= 8}
           >
             <AddIcon />
           </IconButton>
           <Button onClick={startGame}>Restart</Button>
+          <Typography>
+            Moves: {moves} | Time: {timer.toFixed(1)}s
+          </Typography>
         </div>
         <div
           className={styles.board}
@@ -73,11 +79,6 @@ const App: React.FC = () => {
               onClick={() => onTilePress(row, col)}
             ></Tile>
           ))}
-        </div>
-        <div>
-          <Typography>
-            Moves: {moves} | Time: {timer.toFixed(1)}s
-          </Typography>
         </div>
         {won && <div>You won</div>}
       </div>
