@@ -48,7 +48,7 @@ const initGameState = (size: number): GameState => {
 
   let zeroPos = { row: size - 1, col: size - 1 };
 
-  for (let i = 0; i < size * size; i++) {
+  for (let i = 0; i < size * size * size * size * size; i++) {
     const avail = getAvailM0ves(zeroPos, size);
     const chosen = avail[Math.floor(Math.random() * avail.length)];
     const temp = board[chosen.row][chosen.col];
